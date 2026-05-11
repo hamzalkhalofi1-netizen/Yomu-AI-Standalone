@@ -1,9 +1,8 @@
-import React, { useRef, useState } from 'react';
+import React, { useState } from 'react';
 import {
   Dimensions, FlatList, Image, StyleSheet,
   Text, TouchableOpacity, View,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 
 const { width } = Dimensions.get('window');
 const ITEM_WIDTH = width - 32;
@@ -36,7 +35,7 @@ export default function FeaturedSlider({ data, onPress }) {
             activeOpacity={0.9}
             onPress={() => onPress && onPress(item)}
           >
-            <Image source={{ uri: item.cover }} style={styles.image} />
+            <Image source={{ uri: item.cover }} style={styles.image} resizeMode="cover" />
             <View style={styles.overlay} />
             <View style={styles.slideContent}>
               <View style={styles.genrePill}>
@@ -46,12 +45,11 @@ export default function FeaturedSlider({ data, onPress }) {
               <Text style={styles.slideDesc} numberOfLines={2}>{item.description}</Text>
               <View style={styles.slideFooter}>
                 <View style={styles.ratingRow}>
-                  <Ionicons name="star" size={12} color="#e94560" />
+                  <Text style={styles.star}>★</Text>
                   <Text style={styles.ratingText}> {item.rating}</Text>
                 </View>
                 <TouchableOpacity style={styles.readBtn} onPress={() => onPress && onPress(item)}>
-                  <Text style={styles.readBtnText}>Lire maintenant  </Text>
-                  <Ionicons name="arrow-forward" size={12} color="#fff" />
+                  <Text style={styles.readBtnText}>Lire maintenant →</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -72,7 +70,7 @@ const styles = StyleSheet.create({
     width: ITEM_WIDTH, height: 220,
     borderRadius: 16, overflow: 'hidden', backgroundColor: '#16213e',
   },
-  image: { ...StyleSheet.absoluteFillObject, width: '100%', height: '100%', resizeMode: 'cover' },
+  image: { ...StyleSheet.absoluteFillObject, width: '100%', height: '100%' },
   overlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(10,10,26,0.65)' },
   slideContent: { flex: 1, justifyContent: 'flex-end', padding: 16 },
   genrePill: {
@@ -84,6 +82,7 @@ const styles = StyleSheet.create({
   slideDesc: { color: 'rgba(255,255,255,0.75)', fontSize: 12, lineHeight: 17, marginBottom: 10 },
   slideFooter: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   ratingRow: { flexDirection: 'row', alignItems: 'center' },
+  star: { color: '#e94560', fontSize: 13 },
   ratingText: { color: '#e94560', fontWeight: 'bold', fontSize: 13 },
   readBtn: {
     flexDirection: 'row', alignItems: 'center',

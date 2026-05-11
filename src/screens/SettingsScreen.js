@@ -1,135 +1,118 @@
-import React, { useState } from 'react';
-import { ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
+import React from 'react';
+import {
+  ScrollView, StyleSheet, Text, TouchableOpacity, View,
+} from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useManga } from '../context/MangaContext';
 
-function SettingsRow({ icon, label, value, onPress, toggle, toggleValue, onToggle, danger }) {
+const BG = '#0f0f1a';
+const CARD = '#16213e';
+const ACCENT = '#e94560';
+
+function SettingRow({ icon, label, value, onPress, danger }) {
   return (
-    <TouchableOpacity style={styles.row} onPress={onPress} activeOpacity={toggle ? 1 : 0.7}>
-      <View style={[styles.iconBox, danger && styles.iconBoxDanger]}>
-        <Ionicons name={icon} size={18} color="#e94560" />
-      </View>
-      <Text style={[styles.rowLabel, danger && styles.rowLabelDanger]}>{label}</Text>
-      {toggle ? (
-        <Switch
-          value={toggleValue}
-          onValueChange={onToggle}
-          trackColor={{ false: '#2a2a4a', true: '#e94560' }}
-          thumbColor="#fff"
-        />
-      ) : value ? (
-        <View style={styles.rowRight}>
-          <Text style={styles.rowValue}>{value}</Text>
-          <Ionicons name="chevron-forward" size={16} color="#2a2a4a" />
-        </View>
-      ) : (
-        <Ionicons name="chevron-forward" size={16} color="#2a2a4a" />
-      )}
+    <TouchableOpacity style={styles.row} onPress={onPress} activeOpacity={0.7}>
+      <Text style={styles.rowIcon}>{icon}</Text>
+      <Text style={[styles.rowLabel, danger && styles.rowDanger]}>{label}</Text>
+      <View style={{ flex: 1 }} />
+      {value ? <Text style={styles.rowValue}>{value}</Text> : null}
+      <Text style={styles.rowArrow}>›</Text>
     </TouchableOpacity>
   );
 }
 
 export default function SettingsScreen({ navigation }) {
-  const [notifications, setNotifications] = useState(true);
-  const [darkMode, setDarkMode] = useState(true);
-  const [autoPlay, setAutoPlay] = useState(false);
-  const [dataMode, setDataMode] = useState(false);
+  const insets = useSafeAreaInsets();
+  const { library, removeFromLibrary } = useManga();
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={22} color="#fff" />
+        <TouchableOpacity onPress={() => navigation.goBack()}>
+          <Text style={styles.backBtn}>← Retour</Text>
         </TouchableOpacity>
-        <Text style={styles.title}>Paramètres</Text>
-        <View style={{ width: 38 }} />
+        <Text style={styles.headerTitle}>Paramètres</Text>
+        <View style={{ width: 60 }} />
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
-        <Text style={styles.groupLabel}>Apparence</Text>
-        <View style={styles.group}>
-          <SettingsRow icon="moon-outline" label="Mode sombre" toggle toggleValue={darkMode} onToggle={setDarkMode} />
-          <View style={styles.divider} />
-          <SettingsRow icon="text-outline" label="Taille de police" value="Normale" onPress={() => {}} />
-          <View style={styles.divider} />
-          <SettingsRow icon="color-palette-outline" label="Thème" value="Rouge" onPress={() => {}} />
+      <ScrollView>
+        <Text style={styles.sectionLabel}>LECTURE</Text>
+        <View style={styles.card}>
+          <SettingRow icon="🌙" label="Thème" value="Sombre" />
+          <SettingRow icon="📖" label="Mode lecture" value="Vertical" />
+          <SettingRow icon="🔤" label="Langue UI" value="Français" />
         </View>
 
-        <Text style={styles.groupLabel}>Lecture</Text>
-        <View style={styles.group}>
-          <SettingsRow icon="play-circle-outline" label="Lecture automatique" toggle toggleValue={autoPlay} onToggle={setAutoPlay} />
-          <View style={styles.divider} />
-          <SettingsRow icon="phone-portrait-outline" label="Orientation" value="Portrait" onPress={() => {}} />
-          <View style={styles.divider} />
-          <SettingsRow icon="eye-outline" label="Mode de lecture" value="Vertical" onPress={() => {}} />
+        <Text style={styles.sectionLabel}>BIBLIOTHÈQUE</Text>
+        <View style={styles.card}>
+          <SettingRow
+            icon="📚"
+            label="Manga importés"
+            value={`${library.length}`}
+          />
+          <SettingRow
+            icon="🔄"
+            label="Actualiser les sources"
+            onPress={() => {}}
+          />
         </View>
 
-        <Text style={styles.groupLabel}>Notifications</Text>
-        <View style={styles.group}>
-          <SettingsRow icon="notifications-outline" label="Activer les notifications" toggle toggleValue={notifications} onToggle={setNotifications} />
-          <View style={styles.divider} />
-          <SettingsRow icon="mail-outline" label="Email de mises à jour" toggle toggleValue={false} onToggle={() => {}} />
+        <Text style={styles.sectionLabel}>À PROPOS</Text>
+        <View style={styles.card}>
+          <SettingRow icon="ℹ" label="Version" value="1.0.0" />
+          <SettingRow icon="🔒" label="Confidentialité" />
+          <SettingRow icon="📝" label="Conditions d'utilisation" />
         </View>
 
-        <Text style={styles.groupLabel}>Données & Stockage</Text>
-        <View style={styles.group}>
-          <SettingsRow icon="cellular-outline" label="Mode économiseur de données" toggle toggleValue={dataMode} onToggle={setDataMode} />
-          <View style={styles.divider} />
-          <SettingsRow icon="cloud-download-outline" label="Qualité des images" value="Haute" onPress={() => {}} />
-          <View style={styles.divider} />
-          <SettingsRow icon="trash-outline" label="Vider le cache" value="124 MB" onPress={() => {}} />
+        <Text style={styles.sectionLabel}>DONNÉES</Text>
+        <View style={styles.card}>
+          <SettingRow
+            icon="🗑"
+            label="Vider la bibliothèque"
+            danger
+            onPress={() => {
+              library.forEach((m) => removeFromLibrary(m.id));
+            }}
+          />
         </View>
 
-        <Text style={styles.groupLabel}>Compte</Text>
-        <View style={styles.group}>
-          <SettingsRow icon="shield-checkmark-outline" label="Confidentialité" onPress={() => {}} />
-          <View style={styles.divider} />
-          <SettingsRow icon="document-text-outline" label="Conditions d'utilisation" onPress={() => {}} />
-          <View style={styles.divider} />
-          <SettingsRow icon="information-circle-outline" label="À propos" value="v1.0.0" onPress={() => {}} />
-        </View>
-
-        <Text style={styles.groupLabel}>Zone dangereuse</Text>
-        <View style={styles.group}>
-          <SettingsRow icon="log-out-outline" label="Se déconnecter" onPress={() => {}} danger />
-          <View style={styles.divider} />
-          <SettingsRow icon="trash-outline" label="Supprimer le compte" onPress={() => {}} danger />
+        <View style={styles.footer}>
+          <Text style={styles.footerText}>Yomu AI · Fait avec ❤</Text>
+          <Text style={styles.footerSub}>Thème sombre · Accent #e94560</Text>
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0f0f1a' },
+  container: { flex: 1, backgroundColor: BG },
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 16, paddingVertical: 12,
+    paddingHorizontal: 16, paddingBottom: 14, marginTop: 8,
   },
-  backBtn: {
-    width: 38, height: 38, borderRadius: 10, backgroundColor: '#16213e',
-    alignItems: 'center', justifyContent: 'center',
+  backBtn: { color: ACCENT, fontSize: 14, fontWeight: '600' },
+  headerTitle: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
+  sectionLabel: {
+    color: '#4a4a6a', fontSize: 11, fontWeight: 'bold',
+    marginHorizontal: 16, marginTop: 22, marginBottom: 8, letterSpacing: 1,
   },
-  title: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
-  groupLabel: {
-    color: '#a0a0b0', fontSize: 12, fontWeight: '700',
-    textTransform: 'uppercase', letterSpacing: 1,
-    paddingHorizontal: 16, marginTop: 24, marginBottom: 8,
+  card: {
+    marginHorizontal: 16, backgroundColor: CARD,
+    borderRadius: 14, overflow: 'hidden',
+    borderWidth: 1, borderColor: '#1e2a4a',
   },
-  group: { backgroundColor: '#16213e', marginHorizontal: 16, borderRadius: 14, overflow: 'hidden' },
   row: {
     flexDirection: 'row', alignItems: 'center',
-    paddingHorizontal: 14, paddingVertical: 14,
+    paddingHorizontal: 16, paddingVertical: 14,
+    borderBottomWidth: 1, borderBottomColor: '#1e2a4a',
   },
-  iconBox: {
-    width: 36, height: 36, borderRadius: 10,
-    backgroundColor: 'rgba(233,69,96,0.12)',
-    alignItems: 'center', justifyContent: 'center', marginRight: 12,
-  },
-  iconBoxDanger: { backgroundColor: 'rgba(233,69,96,0.08)' },
-  rowLabel: { flex: 1, color: '#fff', fontSize: 14 },
-  rowLabelDanger: { color: '#e94560' },
-  rowRight: { flexDirection: 'row', alignItems: 'center' },
-  rowValue: { color: '#a0a0b0', fontSize: 13, marginRight: 6 },
-  divider: { height: 1, backgroundColor: '#0f0f1a', marginLeft: 62 },
+  rowIcon: { fontSize: 18, marginRight: 12 },
+  rowLabel: { color: '#fff', fontSize: 14 },
+  rowDanger: { color: ACCENT },
+  rowValue: { color: '#a0a0b0', fontSize: 13, marginRight: 8 },
+  rowArrow: { color: '#4a4a6a', fontSize: 18 },
+  footer: { alignItems: 'center', marginTop: 32, marginBottom: 20 },
+  footerText: { color: '#4a4a6a', fontSize: 13 },
+  footerSub: { color: '#2a2a4a', fontSize: 11, marginTop: 4 },
 });

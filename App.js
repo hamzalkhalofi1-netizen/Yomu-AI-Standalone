@@ -1,14 +1,12 @@
 import React from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Text } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { enableScreens } from 'react-native-screens';
-import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
-
 import { MangaProvider } from './src/context/MangaContext';
+
 import HomeScreen from './src/screens/HomeScreen';
 import SearchScreen from './src/screens/SearchScreen';
 import LibraryScreen from './src/screens/LibraryScreen';
@@ -17,10 +15,20 @@ import SettingsScreen from './src/screens/SettingsScreen';
 import DetailScreen from './src/screens/DetailScreen';
 import AddMangaScreen from './src/screens/AddMangaScreen';
 
-enableScreens();
-
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
+
+const TAB_ICONS = {
+  Accueil:      ['🏠', '🏡'],
+  Recherche:    ['🔍', '🔎'],
+  'Bibliothèque': ['📚', '📖'],
+  Profil:       ['👤', '🙂'],
+};
+
+function TabIcon({ routeName, focused, color }) {
+  const [active, inactive] = TAB_ICONS[routeName] || ['●', '○'];
+  return <Text style={{ fontSize: 20, color }}>{focused ? active : inactive}</Text>;
+}
 
 function HomeTabs() {
   return (
@@ -38,15 +46,9 @@ function HomeTabs() {
         tabBarActiveTintColor: '#e94560',
         tabBarInactiveTintColor: '#4a4a6a',
         tabBarLabelStyle: { fontSize: 11, fontWeight: '600' },
-        tabBarIcon: ({ color, focused }) => {
-          const icons = {
-            Accueil: focused ? 'home' : 'home-outline',
-            Recherche: focused ? 'search' : 'search-outline',
-            'Bibliothèque': focused ? 'library' : 'library-outline',
-            Profil: focused ? 'person' : 'person-outline',
-          };
-          return <Ionicons name={icons[route.name]} size={22} color={color} />;
-        },
+        tabBarIcon: ({ color, focused }) => (
+          <TabIcon routeName={route.name} focused={focused} color={color} />
+        ),
       })}
     >
       <Tab.Screen name="Accueil" component={HomeScreen} />
@@ -78,14 +80,3 @@ export default function App() {
     </SafeAreaProvider>
   );
 }
-
-const badge = StyleSheet.create({
-  wrapper: {
-    position: 'absolute', top: -4, right: -8,
-    backgroundColor: '#e94560', borderRadius: 8,
-    minWidth: 16, height: 16,
-    alignItems: 'center', justifyContent: 'center',
-    paddingHorizontal: 3,
-  },
-  text: { color: '#fff', fontSize: 9, fontWeight: 'bold' },
-});

@@ -1,194 +1,205 @@
 import React from 'react';
-import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
+import {
+  FlatList, Image, ScrollView, StyleSheet,
+  Text, TouchableOpacity, View,
+} from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useManga } from '../context/MangaContext';
 import { USER_PROFILE } from '../data/mockData';
 
-const STAT_ITEMS = [
-  { label: 'Manga lus', value: USER_PROFILE.mangaRead },
-  { label: 'Chapitres', value: USER_PROFILE.chaptersRead.toLocaleString() },
-  { label: 'Abonnements', value: USER_PROFILE.following },
-];
+const BG = '#0f0f1a';
+const CARD = '#16213e';
+const ACCENT = '#e94560';
 
-const MENU_ITEMS = [
-  { icon: 'heart-outline', label: 'Mes Favoris', badge: '12' },
-  { icon: 'download-outline', label: 'Téléchargements', badge: null },
-  { icon: 'time-outline', label: 'Historique de lecture', badge: null },
-  { icon: 'notifications-outline', label: 'Notifications', badge: '3' },
-  { icon: 'settings-outline', label: 'Paramètres', screen: 'Settings' },
-  { icon: 'help-circle-outline', label: 'Aide & Support', badge: null },
-];
+function StatBox({ value, label }) {
+  return (
+    <View style={styles.statBox}>
+      <Text style={styles.statValue}>{value}</Text>
+      <Text style={styles.statLabel}>{label}</Text>
+    </View>
+  );
+}
 
 export default function ProfileScreen({ navigation }) {
-  return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 32 }}>
-        <View style={styles.header}>
-          <Text style={styles.pageTitle}>Profil</Text>
-          <TouchableOpacity onPress={() => navigation.navigate('Settings')}>
-            <Ionicons name="settings-outline" size={22} color="#a0a0b0" />
-          </TouchableOpacity>
-        </View>
+  const insets = useSafeAreaInsets();
+  const { library } = useManga();
 
-        {/* Avatar */}
-        <View style={styles.avatarCard}>
-          <View style={styles.avatarWrapper}>
-            <View style={styles.avatar}>
-              <Text style={styles.avatarText}>{USER_PROFILE.name.charAt(0)}</Text>
-            </View>
-            <TouchableOpacity style={styles.editAvatarBtn}>
-              <Ionicons name="camera" size={14} color="#fff" />
+  const totalChapters = library.reduce((acc, m) => {
+    if (typeof m.chapters === 'number') return acc + m.chapters;
+    if (Array.isArray(m.chapters)) return acc + m.chapters.length;
+    return acc;
+  }, 0);
+
+  const favorites = library.length > 0 ? library.slice(0, 3) : USER_PROFILE.favorites;
+
+  return (
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={{ paddingBottom: 30 }}
+      showsVerticalScrollIndicator={false}
+    >
+      <View style={[styles.headerBg, { paddingTop: insets.top + 20 }]}>
+        <View style={styles.avatarRing}>
+          <View style={styles.avatar}>
+            <Text style={styles.avatarText}>
+              {USER_PROFILE.name.charAt(0)}
+            </Text>
+          </View>
+        </View>
+        <Text style={styles.name}>{USER_PROFILE.name}</Text>
+        <Text style={styles.username}>{USER_PROFILE.username}</Text>
+
+        <View style={styles.statsRow}>
+          <StatBox value={library.length || USER_PROFILE.mangaRead} label="Manga" />
+          <View style={styles.statDivider} />
+          <StatBox value={totalChapters || USER_PROFILE.chaptersRead} label="Chapitres" />
+          <View style={styles.statDivider} />
+          <StatBox value={USER_PROFILE.following} label="Suivis" />
+        </View>
+      </View>
+
+      <TouchableOpacity
+        style={styles.settingsBtn}
+        onPress={() => navigation.navigate('Settings')}
+      >
+        <Text style={styles.settingsBtnText}>⚙ Paramètres</Text>
+      </TouchableOpacity>
+
+      <Text style={styles.sectionTitle}>❤ Favoris</Text>
+      <FlatList
+        data={favorites}
+        horizontal
+        keyExtractor={(i) => i.id}
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={{ paddingHorizontal: 16 }}
+        renderItem={({ item }) => (
+          <TouchableOpacity
+            style={styles.favCard}
+            onPress={() => navigation.navigate('Detail', { manga: item })}
+          >
+            {item.cover ? (
+              <Image source={{ uri: item.cover }} style={styles.favCover} resizeMode="cover" />
+            ) : (
+              <View style={[styles.favCover, styles.favPlaceholder]}>
+                <Text style={{ fontSize: 24 }}>📖</Text>
+              </View>
+            )}
+            <View style={styles.favOverlay} />
+            <Text style={styles.favTitle} numberOfLines={2}>{item.title}</Text>
+            {item.progress && (
+              <Text style={styles.favProgress}>{item.progress}</Text>
+            )}
+          </TouchableOpacity>
+        )}
+      />
+
+      <Text style={styles.sectionTitle}>📊 Activité récente</Text>
+      <View style={styles.activityCard}>
+        {library.length > 0 ? (
+          library.slice(0, 5).map((m) => (
+            <TouchableOpacity
+              key={m.id}
+              style={styles.activityRow}
+              onPress={() => navigation.navigate('Detail', { manga: m })}
+            >
+              <View style={styles.activityDot} />
+              <View style={{ flex: 1 }}>
+                <Text style={styles.activityTitle}>{m.title}</Text>
+                <Text style={styles.activitySub}>
+                  {m.progress || 'En lecture'} · {m.addedAt
+                    ? new Date(m.addedAt).toLocaleDateString('fr-FR')
+                    : ''}
+                </Text>
+              </View>
+              <Text style={styles.activityArrow}>›</Text>
+            </TouchableOpacity>
+          ))
+        ) : (
+          <View style={styles.noActivity}>
+            <Text style={styles.noActivityText}>
+              Votre historique de lecture apparaîtra ici.
+            </Text>
+            <TouchableOpacity onPress={() => navigation.navigate('Recherche')}>
+              <Text style={styles.noActivityLink}>Découvrir des manga →</Text>
             </TouchableOpacity>
           </View>
-          <Text style={styles.userName}>{USER_PROFILE.name}</Text>
-          <Text style={styles.userHandle}>{USER_PROFILE.username}</Text>
-          <TouchableOpacity style={styles.editProfileBtn}>
-            <Text style={styles.editProfileText}>Modifier le profil</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Stats */}
-        <View style={styles.statsRow}>
-          {STAT_ITEMS.map((s, i) => (
-            <React.Fragment key={s.label}>
-              <View style={styles.statItem}>
-                <Text style={styles.statValue}>{s.value}</Text>
-                <Text style={styles.statLabel}>{s.label}</Text>
-              </View>
-              {i < STAT_ITEMS.length - 1 && <View style={styles.statDivider} />}
-            </React.Fragment>
-          ))}
-        </View>
-
-        {/* Favorites */}
-        <View style={styles.section}>
-          <View style={styles.sectionRow}>
-            <Text style={styles.sectionTitle}>Mes Favoris</Text>
-            <TouchableOpacity><Text style={styles.seeAll}>Voir tout</Text></TouchableOpacity>
-          </View>
-          <View style={styles.favRow}>
-            {USER_PROFILE.favorites.map((fav) => (
-              <View key={fav.id} style={styles.favItem}>
-                <Image source={{ uri: fav.cover }} style={styles.favCover} />
-                <Text style={styles.favTitle} numberOfLines={1}>{fav.title}</Text>
-                <Text style={styles.favProgress}>{fav.progress}</Text>
-              </View>
-            ))}
-          </View>
-        </View>
-
-        {/* Menu */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Compte</Text>
-          <View style={styles.menuCard}>
-            {MENU_ITEMS.map((item, i) => (
-              <TouchableOpacity
-                key={item.label}
-                style={[styles.menuRow, i < MENU_ITEMS.length - 1 && styles.menuRowBorder]}
-                onPress={() => item.screen && navigation.navigate(item.screen)}
-                activeOpacity={0.7}
-              >
-                <View style={styles.menuLeft}>
-                  <View style={styles.menuIconBox}>
-                    <Ionicons name={item.icon} size={18} color="#e94560" />
-                  </View>
-                  <Text style={styles.menuLabel}>{item.label}</Text>
-                </View>
-                <View style={styles.menuRight}>
-                  {item.badge && (
-                    <View style={styles.menuBadge}>
-                      <Text style={styles.menuBadgeText}>{item.badge}</Text>
-                    </View>
-                  )}
-                  <Ionicons name="chevron-forward" size={16} color="#2a2a4a" />
-                </View>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-
-        {/* Sign out */}
-        <TouchableOpacity style={styles.signOutBtn}>
-          <Ionicons name="log-out-outline" size={18} color="#e94560" />
-          <Text style={styles.signOutText}> Se déconnecter</Text>
-        </TouchableOpacity>
-      </ScrollView>
-    </SafeAreaView>
+        )}
+      </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0f0f1a' },
-  header: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingHorizontal: 16, paddingTop: 8, paddingBottom: 16,
+  container: { flex: 1, backgroundColor: BG },
+  headerBg: {
+    backgroundColor: CARD, alignItems: 'center',
+    paddingBottom: 24, borderBottomLeftRadius: 28, borderBottomRightRadius: 28,
   },
-  pageTitle: { color: '#fff', fontSize: 24, fontWeight: 'bold' },
-  avatarCard: {
-    alignItems: 'center', paddingVertical: 24,
-    backgroundColor: '#16213e', marginHorizontal: 16,
-    borderRadius: 16, marginBottom: 16,
+  avatarRing: {
+    width: 92, height: 92, borderRadius: 46,
+    borderWidth: 3, borderColor: ACCENT,
+    alignItems: 'center', justifyContent: 'center', marginBottom: 12,
   },
-  avatarWrapper: { position: 'relative', marginBottom: 12 },
   avatar: {
-    width: 84, height: 84, borderRadius: 42,
-    backgroundColor: '#e94560', alignItems: 'center', justifyContent: 'center',
-    borderWidth: 3, borderColor: '#0f0f1a',
+    width: 82, height: 82, borderRadius: 41,
+    backgroundColor: '#1e2a4a', alignItems: 'center', justifyContent: 'center',
   },
-  avatarText: { color: '#fff', fontSize: 34, fontWeight: 'bold' },
-  editAvatarBtn: {
-    position: 'absolute', bottom: 0, right: 0,
-    backgroundColor: '#e94560', borderRadius: 12,
-    padding: 5, borderWidth: 2, borderColor: '#0f0f1a',
-  },
-  userName: { color: '#fff', fontSize: 20, fontWeight: 'bold' },
-  userHandle: { color: '#a0a0b0', fontSize: 13, marginTop: 3 },
-  editProfileBtn: {
-    marginTop: 14, borderWidth: 1, borderColor: '#e94560',
-    borderRadius: 10, paddingHorizontal: 24, paddingVertical: 8,
-  },
-  editProfileText: { color: '#e94560', fontWeight: '600', fontSize: 13 },
+  avatarText: { color: ACCENT, fontSize: 32, fontWeight: 'bold' },
+  name: { color: '#fff', fontSize: 20, fontWeight: 'bold' },
+  username: { color: '#a0a0b0', fontSize: 13, marginTop: 4, marginBottom: 18 },
   statsRow: {
-    flexDirection: 'row', backgroundColor: '#16213e',
-    marginHorizontal: 16, borderRadius: 14, padding: 18, marginBottom: 20,
+    flexDirection: 'row', alignItems: 'center',
+    backgroundColor: '#0f0f1a', borderRadius: 16,
+    paddingHorizontal: 24, paddingVertical: 12, marginTop: 4,
   },
-  statItem: { flex: 1, alignItems: 'center' },
+  statBox: { alignItems: 'center', paddingHorizontal: 20 },
   statValue: { color: '#fff', fontSize: 20, fontWeight: 'bold' },
-  statLabel: { color: '#a0a0b0', fontSize: 11, marginTop: 3 },
-  statDivider: { width: 1, backgroundColor: '#2a2a4a' },
-  section: { paddingHorizontal: 16, marginBottom: 20 },
-  sectionRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  sectionTitle: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
-  seeAll: { color: '#e94560', fontSize: 13 },
-  favRow: { flexDirection: 'row' },
-  favItem: { flex: 1, alignItems: 'center', marginHorizontal: 4 },
-  favCover: { width: '100%', aspectRatio: 0.7, borderRadius: 10, backgroundColor: '#16213e' },
-  favTitle: { color: '#fff', fontSize: 11, marginTop: 6, textAlign: 'center' },
-  favProgress: { color: '#a0a0b0', fontSize: 10, marginTop: 2 },
-  menuCard: { backgroundColor: '#16213e', borderRadius: 14, overflow: 'hidden' },
-  menuRow: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 14, paddingVertical: 14,
+  statLabel: { color: '#a0a0b0', fontSize: 11, marginTop: 2 },
+  statDivider: { width: 1, height: 32, backgroundColor: '#1e2a4a' },
+  settingsBtn: {
+    alignSelf: 'flex-end', margin: 16,
+    backgroundColor: CARD, borderRadius: 10,
+    paddingHorizontal: 14, paddingVertical: 8,
+    borderWidth: 1, borderColor: '#1e2a4a',
   },
-  menuRowBorder: { borderBottomWidth: 1, borderBottomColor: '#0f0f1a' },
-  menuLeft: { flexDirection: 'row', alignItems: 'center' },
-  menuIconBox: {
-    width: 36, height: 36, borderRadius: 10,
-    backgroundColor: 'rgba(233,69,96,0.12)',
-    alignItems: 'center', justifyContent: 'center', marginRight: 12,
+  settingsBtnText: { color: '#a0a0b0', fontSize: 13, fontWeight: '600' },
+  sectionTitle: {
+    color: '#fff', fontSize: 16, fontWeight: 'bold',
+    marginHorizontal: 16, marginTop: 6, marginBottom: 12,
   },
-  menuLabel: { color: '#fff', fontSize: 14 },
-  menuRight: { flexDirection: 'row', alignItems: 'center' },
-  menuBadge: {
-    backgroundColor: '#e94560', borderRadius: 10,
-    paddingHorizontal: 7, paddingVertical: 2, marginRight: 8,
+  favCard: {
+    width: 130, height: 180, borderRadius: 12, overflow: 'hidden',
+    marginRight: 12, backgroundColor: CARD,
   },
-  menuBadgeText: { color: '#fff', fontSize: 10, fontWeight: 'bold' },
-  signOutBtn: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    marginHorizontal: 16, padding: 14, borderRadius: 12,
-    backgroundColor: 'rgba(233,69,96,0.1)',
-    borderWidth: 1, borderColor: 'rgba(233,69,96,0.3)',
+  favCover: { width: '100%', height: '100%' },
+  favPlaceholder: { backgroundColor: '#1a2a4a', alignItems: 'center', justifyContent: 'center' },
+  favOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(10,10,26,0.5)' },
+  favTitle: {
+    position: 'absolute', bottom: 24, left: 8, right: 8,
+    color: '#fff', fontSize: 12, fontWeight: 'bold',
   },
-  signOutText: { color: '#e94560', fontWeight: 'bold', fontSize: 14 },
+  favProgress: {
+    position: 'absolute', bottom: 8, left: 8,
+    color: ACCENT, fontSize: 10, fontWeight: 'bold',
+  },
+  activityCard: {
+    marginHorizontal: 16, backgroundColor: CARD,
+    borderRadius: 16, padding: 8, borderWidth: 1, borderColor: '#1e2a4a',
+    marginTop: 4,
+  },
+  activityRow: {
+    flexDirection: 'row', alignItems: 'center',
+    paddingVertical: 10, paddingHorizontal: 8,
+    borderBottomWidth: 1, borderBottomColor: '#1e2a4a',
+  },
+  activityDot: {
+    width: 8, height: 8, borderRadius: 4,
+    backgroundColor: ACCENT, marginRight: 12,
+  },
+  activityTitle: { color: '#fff', fontSize: 13, fontWeight: '600' },
+  activitySub: { color: '#a0a0b0', fontSize: 11, marginTop: 2 },
+  activityArrow: { color: '#4a4a6a', fontSize: 18, marginLeft: 8 },
+  noActivity: { padding: 16, alignItems: 'center' },
+  noActivityText: { color: '#a0a0b0', fontSize: 13, textAlign: 'center', marginBottom: 10 },
+  noActivityLink: { color: ACCENT, fontSize: 13, fontWeight: '600' },
 });

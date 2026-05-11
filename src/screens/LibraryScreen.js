@@ -1,240 +1,127 @@
 import React, { useState } from 'react';
-import { FlatList, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
+import {
+  FlatList, StyleSheet, Text, TextInput,
+  TouchableOpacity, View,
+} from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useManga } from '../context/MangaContext';
-import { TRENDING } from '../data/mockData';
+import MangaCard from '../components/MangaCard';
 
-const FILTERS = ['Tous', 'En lecture', 'Terminés', 'Favoris'];
-const ACCENT = '#e94560';
-const CARD = '#16213e';
 const BG = '#0f0f1a';
-
-const MOCK_LIBRARY = TRENDING.slice(0, 4).map((m, i) => ({
-  ...m,
-  progress: i % 2 === 0 ? 'En lecture' : 'Terminés',
-  lastRead: `Ch. ${(i + 1) * 20}`,
-  pct: Math.round(30 + i * 15),
-  isMock: true,
-}));
-
-function pct(manga) {
-  if (manga.pct != null) return manga.pct;
-  if (!manga.chapters?.length) return 0;
-  return 20;
-}
-
-function lastReadLabel(manga) {
-  if (manga.lastRead) return manga.lastRead;
-  if (manga.chapters?.length) return `Ch. ${manga.chapters[0].number}`;
-  return 'Nouveau';
-}
+const CARD = '#16213e';
+const ACCENT = '#e94560';
 
 export default function LibraryScreen({ navigation }) {
+  const insets = useSafeAreaInsets();
   const { library, removeFromLibrary } = useManga();
-  const [activeFilter, setActiveFilter] = useState('Tous');
-  const [deleteMode, setDeleteMode] = useState(false);
+  const [search, setSearch] = useState('');
 
-  const combined = [
-    ...library.map((m) => ({ ...m, isMock: false })),
-    ...MOCK_LIBRARY,
-  ];
-
-  const filtered =
-    activeFilter === 'Tous'
-      ? combined
-      : combined.filter((m) => m.progress === activeFilter);
+  const filtered = search.trim()
+    ? library.filter((m) =>
+        m.title && m.title.toLowerCase().includes(search.toLowerCase())
+      )
+    : library;
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      {/* Header */}
-      <View style={styles.headerRow}>
-        <Text style={styles.title}>Bibliothèque</Text>
-        <View style={styles.headerActions}>
-          {library.length > 0 && (
-            <TouchableOpacity
-              style={styles.editBtn}
-              onPress={() => setDeleteMode((v) => !v)}
-            >
-              <Text style={[styles.editBtnText, deleteMode && { color: ACCENT }]}>
-                {deleteMode ? 'Terminer' : 'Modifier'}
-              </Text>
-            </TouchableOpacity>
-          )}
-          <TouchableOpacity
-            style={styles.addBtn}
-            onPress={() => navigation.navigate('AddManga')}
-          >
-            <Ionicons name="add" size={22} color="#fff" />
-          </TouchableOpacity>
-        </View>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>📚 Bibliothèque</Text>
+        <TouchableOpacity
+          style={styles.addBtn}
+          onPress={() => navigation.navigate('AddManga')}
+        >
+          <Text style={styles.addBtnText}>+ Ajouter</Text>
+        </TouchableOpacity>
       </View>
 
-      {/* Filter chips */}
-      <View style={styles.filterRow}>
-        {FILTERS.map((f) => (
-          <TouchableOpacity
-            key={f}
-            style={[styles.filterChip, activeFilter === f && styles.filterChipActive]}
-            onPress={() => setActiveFilter(f)}
-          >
-            <Text style={[styles.filterText, activeFilter === f && styles.filterTextActive]}>
-              {f}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+      <TextInput
+        style={styles.search}
+        placeholder="Rechercher dans ma bibliothèque..."
+        placeholderTextColor="#4a4a6a"
+        value={search}
+        onChangeText={setSearch}
+      />
 
       {filtered.length === 0 ? (
         <View style={styles.empty}>
-          <Ionicons name="library-outline" size={56} color="#2a2a4a" />
-          <Text style={styles.emptyTitle}>Bibliothèque vide</Text>
-          <Text style={styles.emptySubtitle}>
-            Ajoutez des manga depuis une URL
+          <Text style={styles.emptyIcon}>📖</Text>
+          <Text style={styles.emptyTitle}>
+            {library.length === 0 ? 'Bibliothèque vide' : 'Aucun résultat'}
           </Text>
-          <TouchableOpacity
-            style={styles.addFirstBtn}
-            onPress={() => navigation.navigate('AddManga')}
-          >
-            <Ionicons name="add-circle-outline" size={18} color="#fff" />
-            <Text style={styles.addFirstBtnText}>Ajouter un manga</Text>
-          </TouchableOpacity>
+          <Text style={styles.emptyDesc}>
+            {library.length === 0
+              ? 'Importez un manga par URL ou ajoutez-en depuis la recherche.'
+              : `Aucun manga correspondant à « ${search} »`}
+          </Text>
+          {library.length === 0 && (
+            <TouchableOpacity
+              style={styles.ctaBtn}
+              onPress={() => navigation.navigate('AddManga')}
+            >
+              <Text style={styles.ctaBtnText}>+ Importer un manga</Text>
+            </TouchableOpacity>
+          )}
         </View>
       ) : (
         <FlatList
           data={filtered}
-          keyExtractor={(i) => String(i.id)}
-          contentContainerStyle={styles.list}
-          showsVerticalScrollIndicator={false}
+          keyExtractor={(i) => i.id}
+          numColumns={3}
+          contentContainerStyle={styles.grid}
           renderItem={({ item }) => (
-            <TouchableOpacity
-              style={styles.row}
-              onPress={() => !deleteMode && navigation.navigate('Detail', { manga: item })}
-              activeOpacity={0.8}
-            >
-              {/* Cover */}
-              {item.cover ? (
-                <Image source={{ uri: item.cover }} style={styles.cover} />
-              ) : (
-                <View style={[styles.cover, styles.coverPlaceholder]}>
-                  <Ionicons name="image-outline" size={22} color="#4a4a6a" />
-                </View>
-              )}
-
-              {/* Info */}
-              <View style={styles.info}>
-                <Text style={styles.mangaTitle} numberOfLines={2}>{item.title}</Text>
-                {item.genre ? <Text style={styles.genre} numberOfLines={1}>{item.genre}</Text> : null}
-
-                <View style={styles.progressRow}>
-                  <View style={[styles.statusBadge, item.progress === 'Terminés' && styles.statusBadgeDone]}>
-                    <Text style={[styles.statusText, item.progress === 'Terminés' && styles.statusTextDone]}>
-                      {item.progress || 'En lecture'}
-                    </Text>
-                  </View>
-                  <Text style={styles.lastRead}>{lastReadLabel(item)}</Text>
-                </View>
-
-                <View style={styles.progressBarBg}>
-                  <View style={[styles.progressBarFill, { width: `${pct(item)}%` }]} />
-                </View>
-
-                {/* Scraped badge */}
-                {!item.isMock && (
-                  <View style={styles.scrapedBadge}>
-                    <Ionicons name="link-outline" size={10} color="#a0a0b0" />
-                    <Text style={styles.scrapedText}> Importé</Text>
-                  </View>
-                )}
-              </View>
-
-              {/* Right side */}
-              {deleteMode && !item.isMock ? (
-                <TouchableOpacity
-                  style={styles.deleteBtn}
-                  onPress={() => removeFromLibrary(item.id)}
-                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                >
-                  <Ionicons name="trash-outline" size={18} color={ACCENT} />
-                </TouchableOpacity>
-              ) : (
-                <Ionicons name="chevron-forward" size={18} color="#2a2a4a" />
-              )}
-            </TouchableOpacity>
+            <View style={styles.gridItem}>
+              <MangaCard
+                item={item}
+                onPress={() => navigation.navigate('Detail', { manga: item })}
+                style={{ width: '100%', marginRight: 0 }}
+              />
+              <TouchableOpacity
+                style={styles.removeBtn}
+                onPress={() => removeFromLibrary(item.id)}
+              >
+                <Text style={styles.removeBtnText}>✕</Text>
+              </TouchableOpacity>
+            </View>
           )}
-          ListHeaderComponent={
-            library.length > 0 ? (
-              <View style={styles.sectionHeader}>
-                <Text style={styles.sectionLabel}>
-                  {library.length} manga importé{library.length > 1 ? 's' : ''}
-                </Text>
-              </View>
-            ) : null
-          }
         />
       )}
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: BG },
-  headerRow: {
-    flexDirection: 'row', alignItems: 'center',
-    paddingHorizontal: 16, paddingTop: 8, paddingBottom: 14,
+  header: {
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    paddingHorizontal: 16, paddingBottom: 12, marginTop: 8,
   },
-  title: { flex: 1, color: '#fff', fontSize: 24, fontWeight: 'bold' },
-  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  editBtn: { paddingHorizontal: 10, paddingVertical: 6 },
-  editBtnText: { color: '#a0a0b0', fontSize: 14 },
+  headerTitle: { color: '#fff', fontSize: 20, fontWeight: 'bold' },
   addBtn: {
     backgroundColor: ACCENT, borderRadius: 10,
-    width: 36, height: 36, alignItems: 'center', justifyContent: 'center',
+    paddingHorizontal: 12, paddingVertical: 7,
   },
-  filterRow: { flexDirection: 'row', paddingHorizontal: 16, marginBottom: 16 },
-  filterChip: {
-    borderRadius: 20, paddingHorizontal: 14, paddingVertical: 7,
-    backgroundColor: CARD, marginRight: 8,
+  addBtnText: { color: '#fff', fontWeight: 'bold', fontSize: 13 },
+  search: {
+    backgroundColor: CARD, color: '#fff', borderRadius: 12,
+    marginHorizontal: 16, marginBottom: 14,
+    paddingHorizontal: 14, paddingVertical: 10, fontSize: 14,
+    borderWidth: 1, borderColor: '#1e2a4a',
   },
-  filterChipActive: { backgroundColor: ACCENT },
-  filterText: { color: '#a0a0b0', fontSize: 13 },
-  filterTextActive: { color: '#fff', fontWeight: 'bold' },
-  list: { padding: 16, paddingTop: 4 },
-  sectionHeader: { marginBottom: 10 },
-  sectionLabel: { color: '#a0a0b0', fontSize: 12 },
-  row: {
-    flexDirection: 'row', alignItems: 'center',
-    backgroundColor: CARD, borderRadius: 12,
-    padding: 12, marginBottom: 12,
+  grid: { paddingHorizontal: 12, paddingBottom: 20 },
+  gridItem: { flex: 1, margin: 4, position: 'relative', maxWidth: '33%' },
+  removeBtn: {
+    position: 'absolute', top: 4, right: 4,
+    backgroundColor: 'rgba(233,69,96,0.85)', borderRadius: 10,
+    width: 20, height: 20, alignItems: 'center', justifyContent: 'center',
   },
-  cover: { width: 56, height: 78, borderRadius: 8, backgroundColor: BG },
-  coverPlaceholder: { alignItems: 'center', justifyContent: 'center' },
-  info: { flex: 1, marginLeft: 12 },
-  mangaTitle: { color: '#fff', fontWeight: 'bold', fontSize: 14, lineHeight: 19 },
-  genre: { color: '#a0a0b0', fontSize: 12, marginTop: 2 },
-  progressRow: { flexDirection: 'row', alignItems: 'center', marginTop: 6 },
-  statusBadge: {
-    backgroundColor: 'rgba(233,69,96,0.15)',
-    borderRadius: 5, paddingHorizontal: 7, paddingVertical: 2, marginRight: 8,
-  },
-  statusBadgeDone: { backgroundColor: 'rgba(100,200,100,0.15)' },
-  statusText: { color: ACCENT, fontSize: 10, fontWeight: 'bold' },
-  statusTextDone: { color: '#64c864' },
-  lastRead: { color: '#a0a0b0', fontSize: 11 },
-  progressBarBg: { height: 3, backgroundColor: '#2a2a4a', borderRadius: 2, marginTop: 8 },
-  progressBarFill: { height: 3, backgroundColor: ACCENT, borderRadius: 2 },
-  scrapedBadge: {
-    flexDirection: 'row', alignItems: 'center', marginTop: 5,
-  },
-  scrapedText: { color: '#6a6a8a', fontSize: 10 },
-  deleteBtn: { padding: 8 },
+  removeBtnText: { color: '#fff', fontSize: 10, fontWeight: 'bold' },
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 },
-  emptyTitle: { color: '#fff', fontSize: 18, fontWeight: 'bold', marginTop: 12 },
-  emptySubtitle: { color: '#a0a0b0', fontSize: 14, marginTop: 6, textAlign: 'center' },
-  addFirstBtn: {
-    flexDirection: 'row', alignItems: 'center',
-    backgroundColor: ACCENT, borderRadius: 12,
-    paddingHorizontal: 20, paddingVertical: 12, marginTop: 20,
+  emptyIcon: { fontSize: 48, marginBottom: 16 },
+  emptyTitle: { color: '#fff', fontSize: 18, fontWeight: 'bold', marginBottom: 8 },
+  emptyDesc: { color: '#a0a0b0', fontSize: 14, textAlign: 'center', lineHeight: 20, marginBottom: 20 },
+  ctaBtn: {
+    backgroundColor: ACCENT, borderRadius: 10,
+    paddingHorizontal: 20, paddingVertical: 10,
   },
-  addFirstBtnText: { color: '#fff', fontWeight: 'bold', fontSize: 14, marginLeft: 8 },
+  ctaBtnText: { color: '#fff', fontWeight: 'bold', fontSize: 14 },
 });

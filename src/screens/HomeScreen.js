@@ -1,178 +1,169 @@
 import React, { useState } from 'react';
 import {
-  FlatList, Image, ScrollView, StyleSheet,
-  Text, TextInput, TouchableOpacity, View,
+  FlatList, ScrollView, StyleSheet, Text,
+  TouchableOpacity, View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { FEATURED, TRENDING } from '../data/mockData';
 import FeaturedSlider from '../components/FeaturedSlider';
 import MangaCard from '../components/MangaCard';
-import { FEATURED, TRENDING, RECENT_UPDATES } from '../data/mockData';
+import { useManga } from '../context/MangaContext';
 
-const CATEGORIES = ['Tous', 'Action', 'Romance', 'Fantasy', 'Horreur', 'Comédie', 'Drame'];
+const BG = '#0f0f1a';
+const CARD = '#16213e';
+const ACCENT = '#e94560';
+
+const CATEGORIES = ['Tout', 'Action', 'Fantasy', 'Romance', 'Horreur', 'Comédie'];
 
 export default function HomeScreen({ navigation }) {
-  const [activeCategory, setActiveCategory] = useState('Tous');
-  const [searchQuery, setSearchQuery] = useState('');
+  const insets = useSafeAreaInsets();
+  const { library } = useManga();
+  const [activeCategory, setActiveCategory] = useState('Tout');
+
+  const filtered = activeCategory === 'Tout'
+    ? TRENDING
+    : TRENDING.filter((m) =>
+        m.genre && m.genre.toLowerCase().includes(activeCategory.toLowerCase())
+      );
+
+  const handleMangaPress = (manga) => {
+    navigation.navigate('Detail', { manga });
+  };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      <View style={styles.header}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={{ paddingBottom: 20 }}
+      showsVerticalScrollIndicator={false}
+    >
+      <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
         <View>
           <Text style={styles.greeting}>Bonjour 👋</Text>
-          <Text style={styles.headerTitle}>Yomu <Text style={styles.accent}>AI</Text></Text>
+          <Text style={styles.appName}>Yomu AI</Text>
         </View>
-        <TouchableOpacity style={styles.notifBtn}>
-          <Ionicons name="notifications-outline" size={22} color="#fff" />
-          <View style={styles.notifDot} />
+        <TouchableOpacity
+          style={styles.addBtn}
+          onPress={() => navigation.navigate('AddManga')}
+        >
+          <Text style={styles.addBtnText}>+ Importer</Text>
         </TouchableOpacity>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 24 }}>
-        {/* Search */}
-        <View style={styles.searchRow}>
-          <View style={styles.searchBox}>
-            <Ionicons name="search-outline" size={18} color="#a0a0b0" />
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Rechercher un manga..."
-              placeholderTextColor="#a0a0b0"
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-            />
-          </View>
-          <TouchableOpacity style={styles.filterBtn}>
-            <Ionicons name="options-outline" size={20} color="#fff" />
+      <Text style={styles.sectionTitle}>✨ À la une</Text>
+      <FeaturedSlider data={FEATURED} onPress={handleMangaPress} />
+
+      <Text style={styles.sectionTitle}>Catégories</Text>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.categories}
+      >
+        {CATEGORIES.map((cat) => (
+          <TouchableOpacity
+            key={cat}
+            style={[styles.catPill, activeCategory === cat && styles.catPillActive]}
+            onPress={() => setActiveCategory(cat)}
+          >
+            <Text style={[styles.catText, activeCategory === cat && styles.catTextActive]}>
+              {cat}
+            </Text>
           </TouchableOpacity>
-        </View>
-
-        {/* Featured */}
-        <Text style={styles.sectionTitle}>⭐ À la une</Text>
-        <FeaturedSlider
-          data={FEATURED}
-          onPress={(item) => navigation.navigate('Detail', { manga: item })}
-        />
-
-        {/* Categories */}
-        <Text style={styles.sectionTitle}>Catégories</Text>
-        <FlatList
-          horizontal
-          data={CATEGORIES}
-          keyExtractor={(c) => c}
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ paddingHorizontal: 16 }}
-          renderItem={({ item }) => (
-            <TouchableOpacity
-              style={[styles.categoryChip, activeCategory === item && styles.categoryChipActive]}
-              onPress={() => setActiveCategory(item)}
-            >
-              <Text style={[styles.categoryText, activeCategory === item && styles.categoryTextActive]}>
-                {item}
-              </Text>
-            </TouchableOpacity>
-          )}
-        />
-
-        {/* Trending */}
-        <View style={styles.sectionRow}>
-          <Text style={styles.sectionTitle}>🔥 Populaires</Text>
-          <TouchableOpacity style={{ paddingRight: 16 }}>
-            <Text style={styles.seeAll}>Voir tout</Text>
-          </TouchableOpacity>
-        </View>
-        <FlatList
-          horizontal
-          data={TRENDING}
-          keyExtractor={(i) => i.id}
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ paddingHorizontal: 16 }}
-          renderItem={({ item }) => (
-            <MangaCard
-              item={item}
-              onPress={() => navigation.navigate('Detail', { manga: item })}
-            />
-          )}
-        />
-
-        {/* Recent Updates */}
-        <View style={styles.sectionRow}>
-          <Text style={styles.sectionTitle}>🕒 Mises à jour</Text>
-          <TouchableOpacity style={{ paddingRight: 16 }}>
-            <Text style={styles.seeAll}>Voir tout</Text>
-          </TouchableOpacity>
-        </View>
-        <View style={styles.updatesList}>
-          {RECENT_UPDATES.map((item) => (
-            <TouchableOpacity
-              key={item.id}
-              style={styles.updateRow}
-              onPress={() => navigation.navigate('Detail', { manga: item })}
-              activeOpacity={0.8}
-            >
-              <Image source={{ uri: item.cover }} style={styles.updateCover} />
-              <View style={styles.updateInfo}>
-                <Text style={styles.updateTitle}>{item.title}</Text>
-                <Text style={styles.updateChapter}>{item.chapter}</Text>
-              </View>
-              <Text style={styles.updateTime}>{item.time}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
+        ))}
       </ScrollView>
-    </SafeAreaView>
+
+      <View style={styles.sectionRow}>
+        <Text style={styles.sectionTitle}>🔥 Tendances</Text>
+        <Text style={styles.seeAll}>{filtered.length} manga</Text>
+      </View>
+      <FlatList
+        data={filtered}
+        horizontal
+        keyExtractor={(i) => i.id}
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={{ paddingHorizontal: 16 }}
+        renderItem={({ item }) => (
+          <MangaCard item={item} onPress={() => handleMangaPress(item)} />
+        )}
+      />
+
+      {library.length > 0 && (
+        <>
+          <View style={styles.sectionRow}>
+            <Text style={styles.sectionTitle}>📚 Ma bibliothèque</Text>
+            <TouchableOpacity onPress={() => navigation.navigate('Bibliothèque')}>
+              <Text style={styles.seeAll}>Voir tout</Text>
+            </TouchableOpacity>
+          </View>
+          <FlatList
+            data={library.slice(0, 6)}
+            horizontal
+            keyExtractor={(i) => i.id}
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ paddingHorizontal: 16 }}
+            renderItem={({ item }) => (
+              <MangaCard item={item} onPress={() => handleMangaPress(item)} />
+            )}
+          />
+        </>
+      )}
+
+      {library.length === 0 && (
+        <View style={styles.ctaBanner}>
+          <Text style={styles.ctaTitle}>Importez votre premier manga</Text>
+          <Text style={styles.ctaDesc}>
+            Collez l'URL d'un site manga pour l'ajouter à votre bibliothèque personnelle.
+          </Text>
+          <TouchableOpacity
+            style={styles.ctaBtn}
+            onPress={() => navigation.navigate('AddManga')}
+          >
+            <Text style={styles.ctaBtnText}>+ Importer un manga</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0f0f1a' },
+  container: { flex: 1, backgroundColor: BG },
   header: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingHorizontal: 16, paddingBottom: 12, paddingTop: 4,
+    paddingHorizontal: 16, paddingBottom: 16,
   },
   greeting: { color: '#a0a0b0', fontSize: 13 },
-  headerTitle: { color: '#fff', fontSize: 24, fontWeight: 'bold', marginTop: 2 },
-  accent: { color: '#e94560' },
-  notifBtn: { position: 'relative', padding: 6 },
-  notifDot: {
-    position: 'absolute', top: 6, right: 6,
-    width: 8, height: 8, borderRadius: 4, backgroundColor: '#e94560',
+  appName: { color: '#fff', fontSize: 24, fontWeight: 'bold', marginTop: 2 },
+  addBtn: {
+    backgroundColor: ACCENT, borderRadius: 10,
+    paddingHorizontal: 14, paddingVertical: 8,
   },
-  searchRow: {
-    flexDirection: 'row', alignItems: 'center',
-    paddingHorizontal: 16, marginBottom: 20,
-  },
-  searchBox: {
-    flex: 1, flexDirection: 'row', alignItems: 'center',
-    backgroundColor: '#16213e', borderRadius: 12,
-    paddingHorizontal: 14, paddingVertical: 11, marginRight: 10,
-  },
-  searchInput: { flex: 1, color: '#fff', fontSize: 14, marginLeft: 8 },
-  filterBtn: { backgroundColor: '#16213e', borderRadius: 12, padding: 11 },
+  addBtnText: { color: '#fff', fontWeight: 'bold', fontSize: 13 },
   sectionTitle: {
     color: '#fff', fontSize: 16, fontWeight: 'bold',
-    paddingHorizontal: 16, marginBottom: 12, marginTop: 20,
+    marginHorizontal: 16, marginTop: 22, marginBottom: 12,
   },
   sectionRow: {
-    flexDirection: 'row', justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    marginHorizontal: 16, marginTop: 22, marginBottom: 12,
   },
-  seeAll: { color: '#e94560', fontSize: 13 },
-  categoryChip: {
-    borderRadius: 20, paddingHorizontal: 16, paddingVertical: 7,
-    backgroundColor: '#16213e', marginRight: 8,
+  seeAll: { color: ACCENT, fontSize: 12, fontWeight: '600' },
+  categories: { paddingHorizontal: 16, paddingBottom: 4 },
+  catPill: {
+    paddingHorizontal: 16, paddingVertical: 7, borderRadius: 20,
+    backgroundColor: CARD, marginRight: 8, borderWidth: 1, borderColor: '#1e2a4a',
   },
-  categoryChipActive: { backgroundColor: '#e94560' },
-  categoryText: { color: '#a0a0b0', fontSize: 13 },
-  categoryTextActive: { color: '#fff', fontWeight: 'bold' },
-  updatesList: { paddingHorizontal: 16 },
-  updateRow: {
-    flexDirection: 'row', alignItems: 'center',
-    backgroundColor: '#16213e', borderRadius: 12,
-    padding: 10, marginBottom: 10,
+  catPillActive: { backgroundColor: ACCENT, borderColor: ACCENT },
+  catText: { color: '#a0a0b0', fontSize: 13, fontWeight: '600' },
+  catTextActive: { color: '#fff' },
+  ctaBanner: {
+    margin: 16, marginTop: 22, backgroundColor: CARD,
+    borderRadius: 16, padding: 20, borderWidth: 1, borderColor: '#1e2a4a',
   },
-  updateCover: { width: 48, height: 64, borderRadius: 8, backgroundColor: '#0f0f1a' },
-  updateInfo: { flex: 1, marginLeft: 12 },
-  updateTitle: { color: '#fff', fontSize: 14, fontWeight: '600' },
-  updateChapter: { color: '#e94560', fontSize: 12, marginTop: 4 },
-  updateTime: { color: '#a0a0b0', fontSize: 11 },
+  ctaTitle: { color: '#fff', fontSize: 16, fontWeight: 'bold', marginBottom: 6 },
+  ctaDesc: { color: '#a0a0b0', fontSize: 13, lineHeight: 19, marginBottom: 14 },
+  ctaBtn: {
+    backgroundColor: ACCENT, borderRadius: 10,
+    paddingVertical: 10, alignItems: 'center',
+  },
+  ctaBtnText: { color: '#fff', fontWeight: 'bold', fontSize: 14 },
 });
