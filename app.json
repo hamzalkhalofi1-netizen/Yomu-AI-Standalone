@@ -1,8 +1,8 @@
 {
   "expo": {
     "name": "Yomu AI",
-    "slug": "Yomu-AI-Standalone",
-    "owner": "hamzalkhalofi1-organization",
+    "slug": "yomuai",
+    "owner": "hamzalkhalofi1s-organization",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
