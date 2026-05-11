@@ -29,13 +29,10 @@ jobs:
       - name: Install EAS CLI
         run: npm install -g eas-cli
 
-      - name: Build APK
+      - name: Trigger EAS Build
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-        run: npx eas build --platform android --profile preview --non-interactive
+        run: npx eas build --platform android --profile preview --non-interactive --no-wait
 
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: Yomu-AI-App
-          path: ./*.apk
+      - name: Build submitted
+        run: echo "Build triggered on Expo servers. Monitor progress at https://expo.dev/accounts/hamzalkhalofi1s-organization/projects/yomuai/builds"
