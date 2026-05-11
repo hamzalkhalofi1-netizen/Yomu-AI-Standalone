@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -7,12 +7,15 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { enableScreens } from 'react-native-screens';
 import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
+
+import { MangaProvider } from './src/context/MangaContext';
 import HomeScreen from './src/screens/HomeScreen';
 import SearchScreen from './src/screens/SearchScreen';
 import LibraryScreen from './src/screens/LibraryScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
 import SettingsScreen from './src/screens/SettingsScreen';
 import DetailScreen from './src/screens/DetailScreen';
+import AddMangaScreen from './src/screens/AddMangaScreen';
 
 enableScreens();
 
@@ -57,14 +60,21 @@ function HomeTabs() {
 export default function App() {
   return (
     <SafeAreaProvider>
-      <StatusBar style="light" backgroundColor="#0f0f1a" />
-      <NavigationContainer>
-        <Stack.Navigator screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="Main" component={HomeTabs} />
-          <Stack.Screen name="Detail" component={DetailScreen} />
-          <Stack.Screen name="Settings" component={SettingsScreen} />
-        </Stack.Navigator>
-      </NavigationContainer>
+      <MangaProvider>
+        <StatusBar style="light" backgroundColor="#0f0f1a" />
+        <NavigationContainer>
+          <Stack.Navigator screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="Main" component={HomeTabs} />
+            <Stack.Screen name="Detail" component={DetailScreen} />
+            <Stack.Screen name="Settings" component={SettingsScreen} />
+            <Stack.Screen
+              name="AddManga"
+              component={AddMangaScreen}
+              options={{ presentation: 'card' }}
+            />
+          </Stack.Navigator>
+        </NavigationContainer>
+      </MangaProvider>
     </SafeAreaProvider>
   );
 }
