@@ -30,10 +30,10 @@ jobs:
         run: npm install -g eas-cli
 
       - name: Build APK
-        run: npx eas build --platform android --profile preview --local --output ./yomu-ai.apk
+        run: npx eas build --platform android --profile preview --local --non-interactive
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: Yomu-AI-App
-          path: ./yomu-ai.apk
+          path: ./*.apk

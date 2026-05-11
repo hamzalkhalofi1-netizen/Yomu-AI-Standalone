@@ -18,11 +18,6 @@
         "backgroundColor": "#ffffff"
       },
       "package": "com.hamzalkhalofi.yomuai"
-    },
-    "extra": {
-      "eas": {
-        "projectId": "0a5d38fd-ab0f-49dd-83ed-f6cca5e45381"
-      }
     }
   }
 }
