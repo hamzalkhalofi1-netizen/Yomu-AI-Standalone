@@ -1,182 +1,81 @@
-import React, { useEffect, useState } from 'react';
-import {
-  ActivityIndicator,
-  FlatList,
-  Image,
-  SafeAreaView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
-import { fetchMangaList } from './src/utils/scraper';
+import React from 'react';
+import { StyleSheet, Text, View } from 'react-native';
+import { NavigationContainer } from '@react-navigation/native';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { enableScreens } from 'react-native-screens';
+import { Ionicons } from '@expo/vector-icons';
+import { StatusBar } from 'expo-status-bar';
+import HomeScreen from './src/screens/HomeScreen';
+import SearchScreen from './src/screens/SearchScreen';
+import LibraryScreen from './src/screens/LibraryScreen';
+import ProfileScreen from './src/screens/ProfileScreen';
+import SettingsScreen from './src/screens/SettingsScreen';
+import DetailScreen from './src/screens/DetailScreen';
 
-const DEMO_SOURCE = 'https://olympusscanlation.com/manga/';
+enableScreens();
 
-export default function App() {
-  const [mangaList, setMangaList] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+const Tab = createBottomTabNavigator();
+const Stack = createNativeStackNavigator();
 
-  const load = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const results = await fetchMangaList(DEMO_SOURCE);
-      setMangaList(results);
-    } catch (err) {
-      setError(err.message || 'Unknown error');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    load();
-  }, []);
-
-  const renderItem = ({ item }) => (
-    <View style={styles.card}>
-      {item.cover ? (
-        <Image source={{ uri: item.cover }} style={styles.cover} />
-      ) : (
-        <View style={styles.coverPlaceholder}>
-          <Text style={styles.placeholderText}>No Cover</Text>
-        </View>
-      )}
-      <Text style={styles.title} numberOfLines={2}>
-        {item.title || 'Untitled'}
-      </Text>
-    </View>
-  );
-
+function HomeTabs() {
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#1a1a2e" />
-      <View style={styles.header}>
-        <Text style={styles.headerText}>Yomu AI</Text>
-      </View>
-
-      {loading && (
-        <View style={styles.center}>
-          <ActivityIndicator size="large" color="#e94560" />
-          <Text style={styles.loadingText}>Loading manga...</Text>
-        </View>
-      )}
-
-      {!loading && error && (
-        <View style={styles.center}>
-          <Text style={styles.errorText}>{error}</Text>
-          <TouchableOpacity style={styles.retryBtn} onPress={load}>
-            <Text style={styles.retryText}>Retry</Text>
-          </TouchableOpacity>
-        </View>
-      )}
-
-      {!loading && !error && mangaList.length === 0 && (
-        <View style={styles.center}>
-          <Text style={styles.emptyText}>No manga found.</Text>
-          <TouchableOpacity style={styles.retryBtn} onPress={load}>
-            <Text style={styles.retryText}>Retry</Text>
-          </TouchableOpacity>
-        </View>
-      )}
-
-      {!loading && !error && mangaList.length > 0 && (
-        <FlatList
-          data={mangaList}
-          keyExtractor={(_, i) => String(i)}
-          renderItem={renderItem}
-          numColumns={2}
-          contentContainerStyle={styles.list}
-        />
-      )}
-    </SafeAreaView>
+    <Tab.Navigator
+      screenOptions={({ route }) => ({
+        headerShown: false,
+        tabBarStyle: {
+          backgroundColor: '#16213e',
+          borderTopColor: '#1e2a4a',
+          borderTopWidth: 1,
+          height: 62,
+          paddingBottom: 8,
+          paddingTop: 6,
+        },
+        tabBarActiveTintColor: '#e94560',
+        tabBarInactiveTintColor: '#4a4a6a',
+        tabBarLabelStyle: { fontSize: 11, fontWeight: '600' },
+        tabBarIcon: ({ color, focused }) => {
+          const icons = {
+            Accueil: focused ? 'home' : 'home-outline',
+            Recherche: focused ? 'search' : 'search-outline',
+            'Bibliothèque': focused ? 'library' : 'library-outline',
+            Profil: focused ? 'person' : 'person-outline',
+          };
+          return <Ionicons name={icons[route.name]} size={22} color={color} />;
+        },
+      })}
+    >
+      <Tab.Screen name="Accueil" component={HomeScreen} />
+      <Tab.Screen name="Recherche" component={SearchScreen} />
+      <Tab.Screen name="Bibliothèque" component={LibraryScreen} />
+      <Tab.Screen name="Profil" component={ProfileScreen} />
+    </Tab.Navigator>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#1a1a2e',
+export default function App() {
+  return (
+    <SafeAreaProvider>
+      <StatusBar style="light" backgroundColor="#0f0f1a" />
+      <NavigationContainer>
+        <Stack.Navigator screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="Main" component={HomeTabs} />
+          <Stack.Screen name="Detail" component={DetailScreen} />
+          <Stack.Screen name="Settings" component={SettingsScreen} />
+        </Stack.Navigator>
+      </NavigationContainer>
+    </SafeAreaProvider>
+  );
+}
+
+const badge = StyleSheet.create({
+  wrapper: {
+    position: 'absolute', top: -4, right: -8,
+    backgroundColor: '#e94560', borderRadius: 8,
+    minWidth: 16, height: 16,
+    alignItems: 'center', justifyContent: 'center',
+    paddingHorizontal: 3,
   },
-  header: {
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-    backgroundColor: '#16213e',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e94560',
-  },
-  headerText: {
-    color: '#ffffff',
-    fontSize: 22,
-    fontWeight: 'bold',
-    letterSpacing: 1,
-  },
-  center: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  loadingText: {
-    color: '#a0a0b0',
-    marginTop: 12,
-    fontSize: 14,
-  },
-  errorText: {
-    color: '#e94560',
-    textAlign: 'center',
-    marginBottom: 16,
-    fontSize: 14,
-  },
-  emptyText: {
-    color: '#a0a0b0',
-    fontSize: 14,
-    marginBottom: 16,
-  },
-  retryBtn: {
-    backgroundColor: '#e94560',
-    paddingHorizontal: 24,
-    paddingVertical: 10,
-    borderRadius: 8,
-  },
-  retryText: {
-    color: '#ffffff',
-    fontWeight: 'bold',
-  },
-  list: {
-    padding: 8,
-  },
-  card: {
-    flex: 1,
-    margin: 8,
-    backgroundColor: '#16213e',
-    borderRadius: 10,
-    overflow: 'hidden',
-    alignItems: 'center',
-  },
-  cover: {
-    width: '100%',
-    aspectRatio: 0.7,
-    resizeMode: 'cover',
-  },
-  coverPlaceholder: {
-    width: '100%',
-    aspectRatio: 0.7,
-    backgroundColor: '#0f3460',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  placeholderText: {
-    color: '#a0a0b0',
-    fontSize: 12,
-  },
-  title: {
-    color: '#ffffff',
-    fontSize: 12,
-    padding: 8,
-    textAlign: 'center',
-  },
+  text: { color: '#fff', fontSize: 9, fontWeight: 'bold' },
 });
