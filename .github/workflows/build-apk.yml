@@ -1,13 +1,16 @@
 name: Build Android APK
+
 on:
   push:
     branches: [ main ]
+
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4 # تحديث للنسخة v4 لضمان الاستقرار
+        uses: actions/checkout@v4
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -18,21 +21,19 @@ jobs:
         uses: expo/expo-github-action@v8
         with:
           expo-version: latest
-          token: ${{ secrets.EXPO_TOKEN }} # تأكد بلي هاد السر محطوط ف GitHub Secrets
+          token: ${{ secrets.EXPO_TOKEN }}
 
       - name: Install dependencies
-        run: npm install # غادي يقرى الملفات اللي عمرنا ف Replit
+        run: npm install
 
       - name: Install EAS CLI
-        run: npm install -g eas-cli # تثبيت الأداة اللي كانت ناقصة
+        run: npm install -g eas-cli
 
       - name: Build APK
-        # تصحيح الأمر من eas-build لـ eas build وزيادة npx لضمان التشغيل
         run: npx eas build --platform android --profile preview --local --output ./yomu-ai.apk
 
       - name: Upload Artifact
-        uses: actions/upload-artifact@v4 # ضروري v4 باش يتحمل الملف ف اللخر
+        uses: actions/upload-artifact@v4
         with:
           name: Yomu-AI-App
           path: ./yomu-ai.apk
-          
